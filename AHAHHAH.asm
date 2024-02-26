@@ -5,6 +5,13 @@ org 100h
 
 
 Start:
+	mov ax, 3509h
+	int 21h ; bx contains 09h offset, es contains 09h segment
+	mov WORD PTR .old09off, bx
+
+	mov bx, es
+	mov WORD PTR .old09seg, bx
+
     call .SetInteruptVector
 
     call .EndProg
@@ -47,12 +54,10 @@ Start:
 
 	; put char in the middle of the screen
 		in al, 60h
+		cmp al, 12h
+		jne .sk
+			call .RamOchka
 
-		push 0b800h
-		pop es
-		mov bx, (80*5 + 40) * 2
-		mov ah, 40h
-		mov es:[bx], ax
 
 	call .HouseKeeping
 
@@ -60,6 +65,15 @@ Start:
 	pop bx
 	pop ax
 	iret
+
+	.sk:
+		pop es
+		pop bx
+		pop ax
+
+		db 0EAH
+		.old09off: dw 0
+		.old09seg: dw 0
 
 
 .HouseKeeping:
@@ -69,6 +83,7 @@ Start:
 	out 61h, al
 	and al, not 80h
 	out 61h, al
+
 	mov al, 20h
 	out 20h, al
 	ret
